@@ -1,0 +1,24 @@
+# fly.toml app configuration file generated for protohacker-zig on 2023-07-18T19:29:46+01:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "protohacker-zig"
+primary_region = "lhr"
+kill_signal = "SIGINT"
+kill_timeout = "5s"
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 8080
+
+  [[services.ports]]
+    port = 10001
+  [services.concurrency]
+    hard_limit = 1100
+    soft_limit = 800
+
+  [[services.tcp_checks]]
+    interval = "15s"
+    timeout = "2s"
+    restart_limit = 0
