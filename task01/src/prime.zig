@@ -25,17 +25,17 @@ pub fn handle(conn: Connection, line: []const u8) void {
 }
 
 fn parseRequest(data: []const u8) !Request {
-    var stream = std.json.TokenStream.init(data);
     var buf: [max_buf]u8 = undefined;
     var fba = std.heap.FixedBufferAllocator.init(&buf);
+    var stream = std.json.Scanner.initCompleteInput(fba.allocator(), data);
 
-    const req = std.json.parse(Request, &stream, .{
-        .allocator = fba.allocator(),
+    const req = std.json.parseFromTokenSource(Request, fba.allocator(), &stream, .{
         .ignore_unknown_fields = true,
+        .allocate = std.json.AllocWhen.alloc_if_needed,
     }) catch return RequestError.MalformedRequest;
 
-    try validateRequest(data, req);
-    return req;
+    try validateRequest(data, req.value);
+    return req.value;
 }
 
 test "parseRequest: should parse the request correctly" {
@@ -100,7 +100,7 @@ fn sendError(conn: Connection) void {
 
 fn sendResult(conn: Connection, result: bool) !void {
     const resp = Response{ .method = "isPrime", .prime = result };
-    log.debug("{}:response: prime:{}", .{ conn.address, resp.prime });
+    log.debug("{}: response: prime:{}", .{ conn.address, resp.prime });
     sendResponse(conn, &resp) catch |err|
         log.err("error: cannot send error {}", .{err});
 }
@@ -128,13 +128,10 @@ fn isPrime(num: f64) bool {
     const sr = @sqrt(num);
     var i: f64 = 2;
 
-    // TODO: no counting for loops in the current version. Refactor when 0.11 is released.
-    while (i <= sr) {
+    while (i <= sr) : (i += 1) {
         if (@mod(num, i) == 0) {
             return false;
         }
-
-        i += 1;
     }
 
     return true;
