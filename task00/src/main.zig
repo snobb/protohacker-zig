@@ -20,13 +20,14 @@ fn handler(conn: net.StreamServer.Connection) !void {
     var buf: [10]u8 = undefined;
 
     debug.print("{} connected\n", .{conn.address});
-
-    while (true) {
-        var n = conn.stream.read(&buf) catch break;
-        if (n == 0) break;
-        _ = conn.stream.write(buf[0..n]) catch break;
+    defer {
+        conn.stream.close();
+        debug.print("{} disconnected\n", .{conn.address});
     }
 
-    conn.stream.close();
-    debug.print("{} disconnected\n", .{conn.address});
+    while (true) {
+        var n = conn.stream.read(&buf) catch return;
+        if (n == 0) return;
+        _ = conn.stream.write(buf[0..n]) catch return;
+    }
 }

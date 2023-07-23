@@ -25,6 +25,10 @@ pub fn main() !void {
 
 fn handler(conn: net.StreamServer.Connection) !void {
     log.info("{} connected", .{conn.address});
+    defer {
+        conn.stream.close();
+        log.info("{} disconnected", .{conn.address});
+    }
 
     var buf_reader = std.io.bufferedReader(conn.stream.reader());
     var in_stream = buf_reader.reader();
@@ -46,11 +50,6 @@ fn handler(conn: net.StreamServer.Connection) !void {
         prime.handle(conn, line);
     } else |err| {
         log.err("{}: {}", .{ conn.address, err });
-    }
-
-    defer {
-        conn.stream.close();
-        log.info("{} disconnected", .{conn.address});
     }
 }
 
