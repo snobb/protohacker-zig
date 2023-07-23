@@ -7,6 +7,8 @@ const expectEq = std.testing.expectEqual;
 
 const log = @import("./log.zig");
 
+pub const kind_insert = 'I';
+pub const kind_query = 'Q';
 pub const size = 9;
 
 pub const Payload = struct {
@@ -43,7 +45,12 @@ pub const Store = struct {
     }
 
     pub fn print(self: *const @This(), address: std.net.Address) void {
-        const kind = if (self.kind == 'I') "INS" else "QRY";
+        const kind = switch (self.kind) {
+            'I' => "INS",
+            'Q' => "QRY",
+            else => "ERR",
+        };
+
         log.info("{} >>> {s} {d} {d}", .{
             address,
             kind,

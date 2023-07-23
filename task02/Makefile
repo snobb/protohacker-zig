@@ -7,7 +7,7 @@ run:
 	zig run ./src/main.zig
 
 build:
-	zig build-exe src/${MAIN} --name ${TARGET} -O ReleaseSmall -fstrip -static
+	zig build-exe src/${MAIN} --name ${TARGET} -O ReleaseSmall -fstrip
 
 # Make sure to include all the source files with tests in the main.zig
 test:
@@ -29,3 +29,4 @@ deploy: deploy-fly clean
 clean:
 	- rm -f ${TARGET} ${TARGET}.o
 	- rm -f ${LINUX_TARGET} ${LINUX_TARGET}.o
+	- rm -f *.o
