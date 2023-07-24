@@ -81,20 +81,26 @@ test "fromBuf: should read correct message from buffer" {
     try expectEq(msg.payload.data, 101);
 }
 
-pub const ReadIterator = struct {
-    stream: std.io.BufferedReader(4096, std.net.Stream.Reader).Reader,
+fn ReadIterator(comptime ReaderType: type) type {
+    return struct {
+        stream: ReaderType,
 
-    pub fn next(self: *@This()) !?Store {
-        var buf: [size]u8 = undefined;
+        pub fn next(self: *@This()) !?Store {
+            var buf: [size]u8 = undefined;
 
-        const n = try self.stream.read(&buf);
-        if (n == 0) {
-            return null;
+            const n = try self.stream.read(&buf);
+            if (n == 0) {
+                return null;
+            }
+
+            return try fromBuf(&buf);
         }
+    };
+}
 
-        return try fromBuf(&buf);
-    }
-};
+pub fn readIterator(stream: anytype) ReadIterator(@TypeOf(stream)) {
+    return .{ .stream = stream };
+}
 
 pub fn writeResult(conn: Connection, result: i32) !void {
     var w = conn.stream.writer();

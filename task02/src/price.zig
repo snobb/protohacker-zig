@@ -13,7 +13,7 @@ pub const Store = struct {
     conn: Connection,
 
     pub fn init(allocator: Allocator, conn: Connection) Store {
-        return Store{
+        return .{
             .allocator = allocator,
             .conn = conn,
             .payloads = ArrayList(message.Payload).init(allocator),
@@ -22,8 +22,7 @@ pub const Store = struct {
 
     pub fn handle(self: *@This()) !void {
         var buf_reader = std.io.bufferedReader(self.conn.stream.reader());
-        var in_stream = buf_reader.reader();
-        var iter = message.ReadIterator{ .stream = in_stream };
+        var iter = message.readIterator(buf_reader.reader());
 
         while (try iter.next()) |msg| {
             msg.print(self.conn.address);
