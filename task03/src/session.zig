@@ -49,12 +49,9 @@ fn validate(id: []const u8) !void {
     }
 
     for (id) |ch| {
-        if ((ch >= 'a' and ch <= 'z') or
-            (ch >= 'A' and ch <= 'Z') or
-            (ch >= '0' and ch <= '9'))
-            continue;
-
-        return SessionError.NameValidatorError;
+        if (!std.ascii.isAlphanumeric(ch)) {
+            return SessionError.NameValidatorError;
+        }
     }
 }
 
