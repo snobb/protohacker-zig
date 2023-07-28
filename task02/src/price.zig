@@ -1,6 +1,7 @@
 const std = @import("std");
 const net = std.net;
 const Allocator = std.mem.Allocator;
+const HashMap = std.AutoHashMap;
 const ArrayList = std.ArrayList;
 const Connection = std.net.StreamServer.Connection;
 
@@ -8,7 +9,7 @@ const log = @import("./log.zig");
 const message = @import("./msg.zig");
 
 pub const Store = struct {
-    payloads: ArrayList(message.Payload),
+    records: HashMap(i32, i32),
     allocator: Allocator,
     conn: Connection,
 
@@ -16,7 +17,7 @@ pub const Store = struct {
         return .{
             .allocator = allocator,
             .conn = conn,
-            .payloads = ArrayList(message.Payload).init(allocator),
+            .records = HashMap(i32, i32).init(allocator),
         };
     }
 
@@ -24,21 +25,21 @@ pub const Store = struct {
         var buf_reader = std.io.bufferedReader(self.conn.stream.reader());
         var iter = message.readIterator(buf_reader.reader());
 
-        while (try iter.next()) |msg| {
+        while (iter.next()) |maybeMsg| {
+            const msg = maybeMsg orelse break;
+
             msg.print(self.conn.address);
 
-            switch (msg.kind) {
-                message.kind_insert => try self.payloads.append(msg.payload),
+            switch (msg) {
+                message.Kind.insert => try self.records.put(msg.insert.time, msg.insert.price),
 
-                message.kind_query => {
-                    const mean = try self.getAverage(msg.payload.time, msg.payload.data);
+                message.Kind.query => {
+                    const mean = try self.getAverage(msg.query.mintime, msg.query.maxtime);
                     try message.writeResult(self.conn, mean);
                 },
-
-                else => {
-                    log.err("{}: Invalid message type: {c}", .{ self.conn.address, msg.kind });
-                },
             }
+        } else |err| {
+            log.err("{} || Error: {}", .{ self.conn.address, err });
         }
     }
 
@@ -48,12 +49,13 @@ pub const Store = struct {
             return 0;
         }
 
-        var matches = try ArrayList(f64).initCapacity(self.allocator, self.payloads.items.len);
+        var matches = try ArrayList(f64).initCapacity(self.allocator, self.records.capacity());
         defer matches.deinit();
 
-        for (self.payloads.items) |pl| {
-            if (pl.time >= time1 and pl.time <= time2) {
-                try matches.append(@floatFromInt(pl.data));
+        var iter = self.records.iterator();
+        while (iter.next()) |item| {
+            if (item.key_ptr.* >= time1 and item.key_ptr.* <= time2) {
+                try matches.append(@floatFromInt(item.value_ptr.*));
             }
         }
 

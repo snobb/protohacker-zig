@@ -26,6 +26,9 @@ deploy-fly: build-linux
 
 deploy: deploy-fly clean
 
+destroy:
+	fly destroy protohacker-zig
+
 clean:
 	- rm -f ${TARGET} ${TARGET}.o
 	- rm -f ${LINUX_TARGET} ${LINUX_TARGET}.o
