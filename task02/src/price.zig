@@ -31,9 +31,9 @@ pub const Store = struct {
             msg.print(self.conn.address);
 
             switch (msg) {
-                message.Kind.insert => try self.records.put(msg.insert.time, msg.insert.price),
+                message.Message.insert => try self.records.put(msg.insert.time, msg.insert.price),
 
-                message.Kind.query => {
+                message.Message.query => {
                     const mean = try self.getAverage(msg.query.mintime, msg.query.maxtime);
                     try message.writeResult(self.conn, mean);
                 },

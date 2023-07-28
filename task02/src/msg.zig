@@ -13,9 +13,7 @@ pub const kind_insert = 'I';
 pub const kind_query = 'Q';
 pub const size = 9;
 
-pub const Kind = enum { insert, query };
-
-pub const Message = union(Kind) {
+pub const Message = union(enum) {
     insert: struct {
         time: i32,
         price: i32,
@@ -27,29 +25,29 @@ pub const Message = union(Kind) {
 
     pub fn toBuf(self: @This(), buf: *[size]u8) void {
         switch (self) {
-            Kind.insert => {
+            Message.insert => {
                 buf[0] = 'I';
-                mem.writeIntForeign(i32, buf[1..5], self.insert.time);
-                mem.writeIntForeign(i32, buf[5..9], self.insert.price);
+                mem.writeIntBig(i32, buf[1..5], self.insert.time);
+                mem.writeIntBig(i32, buf[5..9], self.insert.price);
             },
-            Kind.query => {
+            Message.query => {
                 buf[0] = 'Q';
-                mem.writeIntForeign(i32, buf[1..5], self.query.mintime);
-                mem.writeIntForeign(i32, buf[5..9], self.query.maxtime);
+                mem.writeIntBig(i32, buf[1..5], self.query.mintime);
+                mem.writeIntBig(i32, buf[5..9], self.query.maxtime);
             },
         }
     }
 
     pub fn print(self: @This(), address: std.net.Address) void {
         switch (self) {
-            Kind.insert => log.info("{} >>> {s} {d} {d}", .{
+            Message.insert => log.info("{} >>> {s} {d} {d}", .{
                 address,
                 "INS",
                 self.insert.time,
                 self.insert.price,
             }),
 
-            Kind.query => log.info("{} >>> {s} {d} {d}", .{
+            Message.query => log.info("{} >>> {s} {d} {d}", .{
                 address,
                 "QRY",
                 self.query.mintime,
@@ -78,8 +76,8 @@ test "toBuf: should write correct message from buffer" {
 }
 
 pub fn fromBuf(buf: []const u8) !Message {
-    const v1 = mem.readIntForeign(i32, buf[1..5]);
-    const v2 = mem.readIntForeign(i32, buf[5..9]);
+    const v1 = mem.readIntBig(i32, buf[1..5]);
+    const v2 = mem.readIntBig(i32, buf[5..9]);
 
     return switch (buf[0]) {
         kind_insert => Message{ .insert = .{ .time = v1, .price = v2 } },
@@ -98,12 +96,12 @@ test "fromBuf: should read correct message from buffer" {
     const msg = try fromBuf(&buf);
 
     try switch (msg) {
-        Kind.insert => {
+        Message.insert => {
             try expectEq(msg.insert.time, 12345);
             try expectEq(msg.insert.price, 101);
         },
 
-        Kind.query => expect(false), // must not happen;
+        Message.query => expect(false), // must not happen;
     };
 }
 
@@ -131,5 +129,5 @@ pub fn readIterator(stream: anytype) ReadIterator(@TypeOf(stream)) {
 pub fn writeResult(conn: Connection, result: i32) !void {
     var w = conn.stream.writer();
     log.info("{} <<< RES {d}", .{ conn.address, result });
-    return try w.writeIntForeign(i32, result);
+    return try w.writeIntBig(i32, result);
 }

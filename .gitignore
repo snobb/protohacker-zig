@@ -19,3 +19,4 @@ testdata
 zig-cache
 zig-out
 *_bin*
+prog*
