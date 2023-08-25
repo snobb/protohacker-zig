@@ -2,7 +2,7 @@ const std = @import("std");
 const os = std.os;
 const Allocator = std.mem.Allocator;
 
-const bufsz = 4096;
+const bufsz = 16384;
 
 const log = @import("./log.zig");
 
