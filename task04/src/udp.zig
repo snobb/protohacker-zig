@@ -42,14 +42,9 @@ pub const Iterator = struct {
         // to work completely.
         const addr = std.net.Address{ .any = caddr };
 
-        var data = try self.allocator.dupe(u8, buf[0..size]);
+        const data = try self.allocator.dupe(u8, buf[0..size]);
 
-        return .{
-            .allocator = self.allocator,
-            .socket = self.socket,
-            .addr = addr,
-            .data = data,
-        };
+        return .{ .allocator = self.allocator, .socket = self.socket, .addr = addr, .data = data };
     }
 };
 

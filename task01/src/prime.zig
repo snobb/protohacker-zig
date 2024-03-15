@@ -39,7 +39,7 @@ fn parseRequest(data: []const u8) !Request {
 }
 
 test "parseRequest: should parse the request correctly" {
-    var line =
+    const line =
         \\{"method":"isPrime","number":123}
     ;
     const req = try parseRequest(line);
@@ -49,14 +49,14 @@ test "parseRequest: should parse the request correctly" {
 }
 
 test "parseRequest: error on string with valid number" {
-    var line =
+    const line =
         \\{"method":"isPrime","number":"123"}
     ;
     try expectError(RequestError.InvalidNumber, parseRequest(line));
 }
 
 test "parseRequest: should error out on invalid data" {
-    var line =
+    const line =
         \\{"method":"isPrime","number":"foo"}
     ;
     try expectError(RequestError.MalformedRequest, parseRequest(line));
@@ -85,7 +85,7 @@ fn validateRequest(line: []const u8, req: Request) !void {
 }
 
 test "validateRequest: error on string with valid number" {
-    var line =
+    const line =
         \\{"method":"isPrime","number":"123"}
     ;
     const req = Request{ .method = "isPrime", .number = 123 };

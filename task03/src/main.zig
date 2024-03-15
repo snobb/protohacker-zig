@@ -26,7 +26,7 @@ pub fn main() !void {
     defer brk.deinit();
 
     while (true) {
-        var conn = server.accept() catch break;
+        const conn = server.accept() catch break;
         _ = thread.spawn(threadConfig, handler, .{ ara.allocator(), conn, &brk }) catch |err|
             log.err("{} thread error: {}", .{ conn.address, err });
     }

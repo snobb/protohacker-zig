@@ -33,3 +33,4 @@ clean:
 	- rm -f ${TARGET} ${TARGET}.o
 	- rm -f ${LINUX_TARGET} ${LINUX_TARGET}.o
 	- rm -f *.o
+	- rm -rf zig-cache

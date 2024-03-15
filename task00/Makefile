@@ -18,3 +18,4 @@ deploy: deploy-fly clean
 clean:
 	- rm -f ${TARGET}
 	- rm -f ${TARGET}.o
+	- rm -rf zig-cache

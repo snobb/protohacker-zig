@@ -9,6 +9,8 @@ const log = @import("./log.zig");
 
 pub const MessageError = error{InvalidKind};
 
+const BigEndian = std.builtin.Endian.big;
+
 pub const kind_insert = 'I';
 pub const kind_query = 'Q';
 pub const size = 9;
@@ -27,13 +29,13 @@ pub const Message = union(enum) {
         switch (self) {
             Message.insert => {
                 buf[0] = 'I';
-                mem.writeIntBig(i32, buf[1..5], self.insert.time);
-                mem.writeIntBig(i32, buf[5..9], self.insert.price);
+                mem.writeInt(i32, buf[1..5], self.insert.time, BigEndian);
+                mem.writeInt(i32, buf[5..9], self.insert.price, BigEndian);
             },
             Message.query => {
                 buf[0] = 'Q';
-                mem.writeIntBig(i32, buf[1..5], self.query.mintime);
-                mem.writeIntBig(i32, buf[5..9], self.query.maxtime);
+                mem.writeInt(i32, buf[1..5], self.query.mintime, BigEndian);
+                mem.writeInt(i32, buf[5..9], self.query.maxtime, BigEndian);
             },
         }
     }
@@ -76,8 +78,8 @@ test "toBuf: should write correct message from buffer" {
 }
 
 pub fn fromBuf(buf: []const u8) !Message {
-    const v1 = mem.readIntBig(i32, buf[1..5]);
-    const v2 = mem.readIntBig(i32, buf[5..9]);
+    const v1 = mem.readInt(i32, buf[1..5], BigEndian);
+    const v2 = mem.readInt(i32, buf[5..9], BigEndian);
 
     return switch (buf[0]) {
         kind_insert => Message{ .insert = .{ .time = v1, .price = v2 } },
@@ -129,5 +131,5 @@ pub fn readIterator(stream: anytype) ReadIterator(@TypeOf(stream)) {
 pub fn writeResult(conn: Connection, result: i32) !void {
     var w = conn.stream.writer();
     log.info("{} <<< RES {d}", .{ conn.address, result });
-    return try w.writeIntBig(i32, result);
+    return try w.writeInt(i32, result, BigEndian);
 }

@@ -24,7 +24,7 @@ pub fn main() !void {
     const threadConfig = thread.SpawnConfig{ .allocator = ara.allocator() };
 
     while (true) {
-        var conn = listener.accept() catch break;
+        const conn = listener.accept() catch break;
         _ = thread.spawn(threadConfig, handler, .{ ara.allocator(), conn }) catch |err|
             log.err("{} thread error: {}", .{ conn.address, err });
     }

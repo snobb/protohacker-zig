@@ -15,7 +15,7 @@ pub fn main() !void {
     log.info("listening on port {d}", .{port});
 
     while (true) {
-        var conn = listener.accept() catch break;
+        const conn = listener.accept() catch break;
         _ = thread.spawn(thread.SpawnConfig{}, handler, .{conn}) catch |err|
             log.info("Error: {}", .{err});
     }

@@ -10,7 +10,7 @@ pub fn main() !void {
     debug.print("listening on port {d}\n", .{port});
 
     while (true) {
-        var conn = listener.accept() catch break;
+        const conn = listener.accept() catch break;
         _ = try thread.spawn(thread.SpawnConfig{}, handler, .{conn});
     }
     debug.print("shutting down\n", .{});
@@ -26,7 +26,7 @@ fn handler(conn: net.StreamServer.Connection) !void {
     }
 
     while (true) {
-        var n = conn.stream.read(&buf) catch return;
+        const n = conn.stream.read(&buf) catch return;
         if (n == 0) return;
         _ = conn.stream.write(buf[0..n]) catch return;
     }

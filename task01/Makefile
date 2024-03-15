@@ -29,3 +29,4 @@ deploy: deploy-fly clean
 clean:
 	- rm -f ${TARGET} ${TARGET}.o
 	- rm -f ${LINUX_TARGET} ${LINUX_TARGET}.o
+	- rm -rf zig-cache
