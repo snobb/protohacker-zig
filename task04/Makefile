@@ -18,8 +18,13 @@ build-linux:
 
 launch:
 	fly launch --copy-config --local-only --name ${FLY_APP} \
-		--no-deploy -r lhr && \
-	fly ips allocate-v6 -a ${FLY_APP}
+		--env ADDRESS=fly-global-services \
+		--env PORT=5000 \
+		--vm-memory 512 \
+		--internal-port 5000 \
+		--no-deploy \
+		--region lhr && \
+	fly ips allocate-v4 --shared -a ${FLY_APP}
 
 deploy-fly: build-linux
 	fly deploy --local-only
@@ -33,3 +38,4 @@ clean:
 	- rm -f ${TARGET} ${TARGET}.o
 	- rm -f ${LINUX_TARGET} ${LINUX_TARGET}.o
 	- rm -f *.o
+	- rm -rf zig-cache

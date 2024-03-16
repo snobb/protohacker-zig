@@ -7,11 +7,13 @@ const udp = @import("./udp.zig");
 pub const Store = struct {
     allocator: Allocator,
     records: std.StringHashMap([]const u8),
+    mutex: std.Thread.Mutex,
 
     pub fn init(allocator: Allocator) Store {
         return .{
             .allocator = allocator,
             .records = std.StringHashMap([]const u8).init(allocator),
+            .mutex = std.Thread.Mutex{},
         };
     }
 
@@ -46,7 +48,9 @@ pub const Store = struct {
             try msg.writer().print("{s}={s}", .{ dgram.data, val });
             _ = try dgram.respond(msg.items);
         } else {
+            self.mutex.lock();
             try self.insert(dgram.data, sep.?);
+            self.mutex.unlock();
         }
     }
 

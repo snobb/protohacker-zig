@@ -48,12 +48,15 @@ pub const Iterator = struct {
     }
 };
 
-pub fn server(allocator: Allocator, addr: []const u8, port: u16) !Iterator {
-    const saddr = try std.net.Address.resolveIp(addr, port);
-    const inet = saddr.any.family;
+pub fn server(allocator: Allocator, host: []const u8, port: u16) !Iterator {
+    const addr_list = try std.net.getAddressList(allocator, host, port);
+    defer addr_list.deinit();
+
+    const addr = addr_list.addrs[0];
+    const inet = addr.any.family;
 
     const sock = try os.socket(inet, os.SOCK.DGRAM, 0);
-    try os.bind(sock, &saddr.any, saddr.getOsSockLen());
+    try os.bind(sock, &addr.any, addr.getOsSockLen());
 
     return .{ .socket = sock, .allocator = allocator };
 }

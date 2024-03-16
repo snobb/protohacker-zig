@@ -4,21 +4,31 @@ const Allocator = std.mem.Allocator;
 
 const log = @import("./log.zig");
 const udp = @import("./udp.zig");
-const udatabase = @import("./udatabase.zig");
+const udb = @import("./udatabase.zig");
+
+const port = 5000;
+
+fn getAddress(allocator: Allocator) []const u8 {
+    if (std.process.getEnvVarOwned(allocator, "ADDRESS")) |addr| {
+        return addr;
+    } else |_| {
+        return "0.0.0.0";
+    }
+}
 
 // Task04 - Unusual database - https://protohackers.com/problem/4
 pub fn main() !void {
-    const port = 5000;
-    log.info("listening on port {d}", .{port});
-
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    // var ara = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer _ = gpa.deinit();
 
-    var iter = try udp.server(gpa.allocator(), "0.0.0.0", port);
+    const addr = getAddress(gpa.allocator());
+
+    log.info("listening on {s}:{d}", .{ addr, port });
+
+    var iter = try udp.server(gpa.allocator(), addr, port);
     defer iter.close();
 
-    var db = udatabase.Store.init(gpa.allocator());
+    var db = udb.Store.init(gpa.allocator());
     defer db.deinit();
 
     while (true) {
