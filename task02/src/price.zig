@@ -3,7 +3,7 @@ const net = std.net;
 const Allocator = std.mem.Allocator;
 const HashMap = std.AutoHashMap;
 const ArrayList = std.ArrayList;
-const Connection = std.net.StreamServer.Connection;
+const Connection = std.net.Server.Connection;
 
 const log = @import("./log.zig");
 const message = @import("./msg.zig");
@@ -32,7 +32,6 @@ pub const Store = struct {
 
             switch (msg) {
                 message.Message.insert => try self.records.put(msg.insert.time, msg.insert.price),
-
                 message.Message.query => {
                     const mean = try self.getAverage(msg.query.mintime, msg.query.maxtime);
                     try message.writeResult(self.conn, mean);
@@ -53,6 +52,7 @@ pub const Store = struct {
         defer matches.deinit();
 
         var iter = self.records.iterator();
+
         while (iter.next()) |item| {
             if (item.key_ptr.* >= time1 and item.key_ptr.* <= time2) {
                 try matches.append(@floatFromInt(item.value_ptr.*));

@@ -17,6 +17,8 @@ testdata
 
 # Dependency directories (remove the comment below to include it)
 zig-cache
+.zig-cache
 zig-out
+.zig-out
 *_bin*
 prog*

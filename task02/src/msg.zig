@@ -1,6 +1,6 @@
 const std = @import("std");
 const mem = std.mem;
-const Connection = std.net.StreamServer.Connection;
+const Connection = std.net.Server.Connection;
 
 const expect = std.testing.expect;
 const expectEq = std.testing.expectEqual;
