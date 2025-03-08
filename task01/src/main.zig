@@ -8,14 +8,17 @@ const prime = @import("./prime.zig");
 const max_buf = 16384;
 
 pub fn main() !void {
-    var listener = net.StreamServer.init(net.StreamServer.Options{});
     const port = 8080;
-    try listener.listen(try net.Address.parseIp6("::", port));
+    const listen_address = try net.Address.parseIp4("0.0.0.0", port);
 
     log.info("listening on port {d}", .{port});
+    var server = try listen_address.listen(.{
+        .reuse_address = true,
+    });
+    defer server.deinit();
 
     while (true) {
-        const conn = listener.accept() catch break;
+        const conn = server.accept() catch break;
         _ = thread.spawn(thread.SpawnConfig{}, handler, .{conn}) catch |err|
             log.info("Error: {}", .{err});
     }
@@ -23,7 +26,7 @@ pub fn main() !void {
     log.info("shutting down", .{});
 }
 
-fn handler(conn: net.StreamServer.Connection) !void {
+fn handler(conn: net.Server.Connection) !void {
     log.info("{} connected", .{conn.address});
     defer {
         conn.stream.close();

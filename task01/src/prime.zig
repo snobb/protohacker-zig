@@ -1,6 +1,6 @@
 const std = @import("std");
 const log = @import("./log.zig");
-const Connection = std.net.StreamServer.Connection;
+const Connection = std.net.Server.Connection;
 const expect = std.testing.expect;
 const expectError = std.testing.expectError;
 
