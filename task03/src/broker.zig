@@ -1,6 +1,6 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
-const Connection = std.net.StreamServer.Connection;
+const Connection = std.net.Server.Connection;
 
 const log = @import("./log.zig");
 
