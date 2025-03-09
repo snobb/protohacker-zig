@@ -1,62 +1,102 @@
 const std = @import("std");
-const os = std.os;
+const net = std.net;
+const posix = std.posix;
 const Allocator = std.mem.Allocator;
-
-const bufsz = 16384;
 
 const log = @import("./log.zig");
 
+const bufsz = 16384;
+
 pub const Datagram = struct {
     allocator: Allocator,
-    socket: os.socket_t,
-    addr: std.net.Address,
+    socket: posix.socket_t,
+    addr: net.Address,
+    rawaddr: posix.sockaddr,
     data: []const u8,
+
+    pub fn init(
+        allocator: Allocator,
+        socket: posix.socket_t,
+        addr: posix.sockaddr,
+        data: []const u8,
+    ) Datagram {
+        return .{
+            .allocator = allocator,
+            .socket = socket,
+            .rawaddr = addr,
+            .addr = net.Address{ .any = addr },
+            .data = data,
+        };
+    }
 
     pub fn free(self: @This()) void {
         self.allocator.free(self.data);
     }
 
     pub fn respond(self: @This(), buf: []const u8) !usize {
-        log.debug("sending {s} to port {}", .{ std.mem.trim(u8, buf, "\n"), self.addr });
-        return try os.sendto(self.socket, buf, 0, @ptrCast(&self.addr.any), @sizeOf(@TypeOf(self.addr.any)));
+        log.debug("sending {s} to port {}", .{
+            std.mem.trim(u8, buf, "\n"),
+            &self.addr,
+        });
+        return try posix.sendto(
+            self.socket,
+            buf,
+            0,
+            &self.rawaddr,
+            @sizeOf(posix.sockaddr),
+        );
     }
 };
 
 pub const Iterator = struct {
     allocator: Allocator,
-    socket: os.socket_t,
+    socket: posix.socket_t,
 
     pub fn close(self: *@This()) void {
-        os.close(self.socket);
+        posix.close(self.socket);
     }
 
     pub fn next(self: *@This()) !?Datagram {
-        var caddr: os.sockaddr = std.mem.zeroes(os.sockaddr);
-        var caddr_len: os.socklen_t = @sizeOf(std.os.sockaddr.in6);
+        var caddr: posix.sockaddr = undefined;
+        var caddr_len: posix.socklen_t = @sizeOf(posix.sockaddr);
 
         var buf: [bufsz]u8 = undefined;
-        const size = try os.recvfrom(self.socket, &buf, 0, &caddr, &caddr_len);
+        const size = try posix.recvfrom(
+            self.socket,
+            buf[0..],
+            0,
+            &caddr,
+            &caddr_len,
+        );
         if (size == 0) return null;
-
-        // XXX: probably wrong thing to do, but at least it gets port right and for IPv4 it seems
-        // to work completely.
-        const addr = std.net.Address{ .any = caddr };
 
         const data = try self.allocator.dupe(u8, buf[0..size]);
 
-        return .{ .allocator = self.allocator, .socket = self.socket, .addr = addr, .data = data };
+        return Datagram.init(
+            self.allocator,
+            self.socket,
+            caddr,
+            data,
+        );
     }
 };
 
 pub fn server(allocator: Allocator, host: []const u8, port: u16) !Iterator {
-    const addr_list = try std.net.getAddressList(allocator, host, port);
-    defer addr_list.deinit();
+    const addr = try net.Address.parseIp(host, port);
 
-    const addr = addr_list.addrs[0];
-    const inet = addr.any.family;
+    const sock = try posix.socket(
+        addr.any.family,
+        posix.SOCK.DGRAM,
+        posix.IPPROTO.UDP,
+    );
+    try posix.bind(
+        sock,
+        &addr.any,
+        addr.getOsSockLen(),
+    );
 
-    const sock = try os.socket(inet, os.SOCK.DGRAM, 0);
-    try os.bind(sock, &addr.any, addr.getOsSockLen());
-
-    return .{ .socket = sock, .allocator = allocator };
+    return .{
+        .socket = sock,
+        .allocator = allocator,
+    };
 }
