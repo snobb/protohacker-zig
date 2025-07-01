@@ -1,5 +1,6 @@
 const std = @import("std");
 const net = std.net;
+const heap = std.heap;
 const thread = std.Thread;
 const Allocator = std.mem.Allocator;
 const Connection = std.net.Server.Connection;
@@ -19,7 +20,7 @@ pub fn main() !void {
     });
     defer server.deinit();
 
-    var ara = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    var ara = heap.ArenaAllocator.init(std.heap.page_allocator);
     defer _ = ara.deinit();
 
     const threadConfig = thread.SpawnConfig{ .allocator = ara.allocator() };
